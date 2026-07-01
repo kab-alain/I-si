@@ -1,9 +1,14 @@
+import { saveAuditLog } from "@/lib/audit";
 import { NextResponse } from 'next/server';
 import { getAllUsers, updateUserApprovalStatus } from '@/lib/db/users-db';
 import type { ApprovalStatus } from '@/lib/types/user';
 
 export async function GET() {
   try {
+    await saveAuditLog("FETCH_USERS", {
+      route: "/api/admin/users",
+      time: new Date().toISOString()
+    });
     const users = await getAllUsers();
     return NextResponse.json({ users }, { status: 200 });
   } catch (error: unknown) {
