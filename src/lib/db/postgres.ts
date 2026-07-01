@@ -18,7 +18,7 @@ function createPool(): Pool {
   const config: PoolConfig = {
     user: parsed.user || 'postgres',
     host: parsed.host || 'localhost',
-    port: parsed.port ? parseInt(String(parsed.port), 10) : 5432,
+    port: parseInt(String(parsed.port), 10) || 5432,
     database: parsed.database || 'isi_climate',
     // Explicit empty string for no-password local Postgres (node-pg requires string type)
     password: parsed.password ?? process.env.PGPASSWORD ?? '',
@@ -59,7 +59,7 @@ export async function initDb() {
         const adminPool = new Pool({
           user: parsed.user || 'postgres',
           host: parsed.host || 'localhost',
-          port: parsed.port ? parseInt(String(parsed.port), 10) : 5432,
+          port: parseInt(String(parsed.port), 10) || 5432,
           database: 'postgres',
           password: parsed.password ?? process.env.PGPASSWORD ?? '',
           ssl: false,
