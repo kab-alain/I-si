@@ -34,7 +34,12 @@ export async function POST(request: NextRequest) {
     const verificationLink = `${baseUrl}/api/notifications/verify?id=${subscription.id}`;
 
     // Send verification email
-    const emailSent = await sendVerificationEmail(email, verificationLink);
+    const emailSent = await sendVerificationEmail(
+      email,
+      verificationLink,
+      location,
+      preferences as NotificationPreferences
+    );
 
     if (!emailSent) {
       return NextResponse.json(

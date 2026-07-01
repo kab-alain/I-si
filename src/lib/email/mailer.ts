@@ -5,7 +5,38 @@
  */
 
 import nodemailer from 'nodemailer';
-import type { WeatherAlertEmail } from '@/lib/types/notifications';
+import type { WeatherAlertEmail, NotificationPreferences } from '@/lib/types/notifications';
+
+function getAlertKindsString(preferences?: NotificationPreferences): string {
+  if (!preferences || !preferences.eventTypes) return 'All Alerts';
+  const kinds: string[] = [];
+  const events = preferences.eventTypes;
+  if (events.heatWave) kinds.push('Heat Waves');
+  if (events.coldWave) kinds.push('Cold Waves');
+  if (events.drought) kinds.push('Droughts');
+  if (events.flood) kinds.push('Floods');
+  if (events.storm) kinds.push('Storms');
+  if (events.heavyRain) kinds.push('Heavy Rain');
+
+  if (kinds.length === 0) return 'None';
+  if (kinds.length === 6) return 'All Weather Alerts';
+  return kinds.join(', ');
+}
+
+function getSeverityLabel(severity?: string): string {
+  if (!severity) return 'Moderate';
+  return severity.charAt(0).toUpperCase() + severity.slice(1);
+}
+
+function getFrequencyLabel(frequency?: string): string {
+  if (!frequency) return 'Immediate';
+  switch (frequency) {
+    case 'immediate': return 'Immediate Alerts';
+    case 'daily': return 'Daily Digest';
+    case 'weekly': return 'Weekly Digest';
+    default: return frequency.charAt(0).toUpperCase() + frequency.slice(1);
+  }
+}
 
 // Email configuration from environment variables
 const EMAIL_USER = process.env.EMAIL_USER; // Your Gmail address
@@ -65,10 +96,49 @@ export async function sendWeatherAlertEmail(
  */
 export async function sendVerificationEmail(
   email: string,
-  verificationLink: string
+  verificationLink: string,
+  location?: string,
+  preferences?: NotificationPreferences
 ): Promise<boolean> {
   try {
     const transport = getTransporter();
+
+    const alertKinds = getAlertKindsString(preferences);
+    const minSeverity = getSeverityLabel(preferences?.minSeverity);
+    const frequency = getFrequencyLabel(preferences?.frequency);
+    const locationStr = location || 'Selected Location';
+
+    const subscriptionDetailsHtml = preferences ? `
+      <div style="background: white; padding: 20px; border-radius: 5px; border: 1px solid #e2e8f0; border-left: 4px solid #667eea; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #667eea; font-size: 16px;">Subscription Details</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr>
+            <td style="padding: 4px 0; color: #666; width: 140px; font-weight: bold;">Location:</td>
+            <td style="padding: 4px 0; color: #333;">${locationStr}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #666; font-weight: bold;">Alert Types:</td>
+            <td style="padding: 4px 0; color: #333;">${alertKinds}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #666; font-weight: bold;">Min Severity:</td>
+            <td style="padding: 4px 0; color: #333;">${minSeverity} and above</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #666; font-weight: bold;">Frequency:</td>
+            <td style="padding: 4px 0; color: #333;">${frequency}</td>
+          </tr>
+        </table>
+      </div>
+    ` : '';
+
+    const subscriptionDetailsText = preferences ? `
+Subscription Details:
+- Location: ${locationStr}
+- Alert Types: ${alertKinds}
+- Min Severity: ${minSeverity} and above
+- Frequency: ${frequency}
+` : '';
 
     const html = `
       <!DOCTYPE html>
@@ -93,6 +163,8 @@ export async function sendVerificationEmail(
               <a href="${verificationLink}" style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Verify Email</a>
             </div>
 
+            ${subscriptionDetailsHtml}
+
             <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
             <p style="color: #667eea; font-size: 14px; word-break: break-all;">${verificationLink}</p>
 
@@ -110,7 +182,7 @@ export async function sendVerificationEmail(
       Rwanda Climate Risk Platform - Verify Your Email
 
       Thank you for subscribing to weather alerts!
-
+      ${subscriptionDetailsText}
       To complete your subscription, please verify your email address by visiting this link:
       ${verificationLink}
 
@@ -140,10 +212,47 @@ export async function sendVerificationEmail(
  */
 export async function sendWelcomeEmail(
   email: string,
-  location: string
+  location: string,
+  preferences?: NotificationPreferences
 ): Promise<boolean> {
   try {
     const transport = getTransporter();
+
+    const alertKinds = getAlertKindsString(preferences);
+    const minSeverity = getSeverityLabel(preferences?.minSeverity);
+    const frequency = getFrequencyLabel(preferences?.frequency);
+
+    const subscriptionDetailsHtml = preferences ? `
+      <div style="background: white; padding: 20px; border-radius: 5px; border: 1px solid #e2e8f0; border-left: 4px solid #667eea; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #667eea; font-size: 16px;">Your Subscription Settings</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr>
+            <td style="padding: 4px 0; color: #666; width: 140px; font-weight: bold;">Location:</td>
+            <td style="padding: 4px 0; color: #333;">${location}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #666; font-weight: bold;">Alert Types:</td>
+            <td style="padding: 4px 0; color: #333;">${alertKinds}</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #666; font-weight: bold;">Min Severity:</td>
+            <td style="padding: 4px 0; color: #333;">${minSeverity} and above</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #666; font-weight: bold;">Frequency:</td>
+            <td style="padding: 4px 0; color: #333;">${frequency}</td>
+          </tr>
+        </table>
+      </div>
+    ` : '';
+
+    const subscriptionDetailsText = preferences ? `
+Your Subscription Settings:
+- Location: ${location}
+- Alert Types: ${alertKinds}
+- Min Severity: ${minSeverity} and above
+- Frequency: ${frequency}
+` : '';
 
     const html = `
       <!DOCTYPE html>
@@ -164,8 +273,10 @@ export async function sendWelcomeEmail(
 
             <p>Great news! Your email has been verified and you're now subscribed to weather alerts for <strong>${location}</strong>.</p>
 
-            <div style="background: white; padding: 20px; border-radius: 5px; border-left: 4px solid #667eea; margin: 20px 0;">
-              <h3 style="margin-top: 0; color: #667eea;">What to Expect</h3>
+            ${subscriptionDetailsHtml}
+
+            <div style="background: white; padding: 20px; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; margin: 20px 0;">
+              <h3 style="margin-top: 0; color: #10b981; font-size: 16px;">What to Expect</h3>
               <ul style="margin: 10px 0; padding-left: 20px;">
                 <li>Timely alerts for extreme weather events</li>
                 <li>Heat waves, floods, droughts, and storms</li>
@@ -193,7 +304,7 @@ export async function sendWelcomeEmail(
       Email Verified Successfully!
 
       Great news! Your email has been verified and you're now subscribed to weather alerts for ${location}.
-
+      ${subscriptionDetailsText}
       What to Expect:
       - Timely alerts for extreme weather events
       - Heat waves, floods, droughts, and storms

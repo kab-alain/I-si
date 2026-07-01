@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     // Send welcome email
     const locationStr = subscription.location || `${subscription.coordinates.lat.toFixed(2)}°, ${subscription.coordinates.lon.toFixed(2)}°`;
-    await sendWelcomeEmail(subscription.email, locationStr);
+    await sendWelcomeEmail(subscription.email, locationStr, subscription.preferences);
 
     // Redirect to success page
     return NextResponse.redirect(new URL('/verify-success', request.url));
