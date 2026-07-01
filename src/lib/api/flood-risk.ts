@@ -1,6 +1,8 @@
 import { nasaPowerAPI } from './nasa-power';
 import { srtmAPI } from './srtm';
 import type { Coordinates } from '@/types';
+import { validateClimateInputs } from '@/lib/validation/climate-data';
+import type { ValidationWarning } from '@/lib/validation/climate-data';
 
 export interface FloodRiskData {
   coordinates: Coordinates;
@@ -23,6 +25,7 @@ export interface FloodRiskData {
     };
   };
   timestamp: Date;
+  validationWarnings?: ValidationWarning[];
 }
 
 export class FloodRiskAPI {
@@ -35,8 +38,17 @@ export class FloodRiskAPI {
     lon: number,
     startDate?: string,
     endDate?: string
-  ): Promise<FloodRiskData | null> {
+  ): Promise<FloodRiskData> {
+    const validationWarnings: ValidationWarning[] = [];
+
     try {
+      // Validate coordinates before any API calls
+      const validated = validateClimateInputs(lat, lon);
+      validationWarnings.push(...validated.warnings);
+      const { lat: validLat, lon: validLon } = validated.coordinates;
+      lat = validLat;
+      lon = validLon;
+
       // Default to last 30 days if not specified
       if (!endDate) {
         endDate = new Date().toISOString().split('T')[0].replace(/-/g, '');
@@ -47,44 +59,56 @@ export class FloodRiskAPI {
         startDate = date.toISOString().split('T')[0].replace(/-/g, '');
       }
 
-      // Fetch data in parallel using NASA POWER API
-      const [rainfallData, elevationData] = await Promise.all([
-        nasaPowerAPI.getRainfallData(lat, lon, startDate, endDate),
-        srtmAPI.getElevationData({ lat, lon })
-      ]);
+      // Fetch data in parallel — use fallbacks if APIs fail
+      let rainfallData = null;
+      let elevationData = null;
 
-      if (!rainfallData || !elevationData) {
-        console.log('Failed to fetch rainfall or elevation data');
-        return null;
+      try {
+        [rainfallData, elevationData] = await Promise.all([
+          nasaPowerAPI.getRainfallData(lat, lon, startDate, endDate),
+          srtmAPI.getElevationData({ lat, lon }),
+        ]);
+      } catch (fetchError) {
+        console.warn('Flood risk: API fetch partial failure, using fallbacks', fetchError);
       }
 
-      // Calculate rainfall factors from NASA POWER data
-      const precipValues = rainfallData.properties?.parameter?.PRECTOTCORR
+      // Calculate rainfall factors from NASA POWER data or fallback
+      const precipValues = rainfallData?.properties?.parameter?.PRECTOTCORR
         ? Object.values(rainfallData.properties.parameter.PRECTOTCORR).filter(
             (p): p is number => typeof p === 'number' && p >= 0
           )
         : [];
 
+      let avgRecent: number;
+      let avgTotal: number;
+      let rainfallAnomaly: number;
+
       if (precipValues.length === 0) {
-        console.log('No valid precipitation data');
-        return null;
+        const rainFallback = validateClimateInputs(lat, lon, undefined);
+        validationWarnings.push(...rainFallback.warnings.filter((w) => w.field === 'rainfall'));
+        avgRecent = rainFallback.rainfall;
+        avgTotal = rainFallback.rainfall;
+        rainfallAnomaly = 0;
+      } else {
+        const recentPrecip = precipValues.slice(-7);
+        avgRecent = recentPrecip.reduce((a, b) => a + b, 0) / recentPrecip.length;
+        avgTotal = precipValues.reduce((a, b) => a + b, 0) / precipValues.length;
+        rainfallAnomaly = avgTotal > 0 ? (avgRecent - avgTotal) / avgTotal : 0;
       }
 
-      const recentPrecip = precipValues.slice(-7); // Last 7 days
-      const avgRecent = recentPrecip.reduce((a, b) => a + b, 0) / recentPrecip.length;
-      const avgTotal = precipValues.reduce((a, b) => a + b, 0) / precipValues.length;
-      const rainfallAnomaly = avgTotal > 0 ? (avgRecent - avgTotal) / avgTotal : 0;
+      const elevation = elevationData?.elevation ?? 1500;
+      const slope = elevationData?.slope ?? 5;
 
       // Calculate risk contributions (0-1 scale)
       const rainfallContribution = this.calculateRainfallRisk(avgRecent, rainfallAnomaly);
-      const elevationContribution = this.calculateElevationRisk(elevationData.elevation);
-      const slopeContribution = this.calculateSlopeRisk(elevationData.slope);
+      const elevationContribution = this.calculateElevationRisk(elevation);
+      const slopeContribution = this.calculateSlopeRisk(slope);
 
       // Weighted flood risk score
       const riskScore = (
-        0.5 * rainfallContribution +     // 50% weight on rainfall
-        0.3 * elevationContribution +     // 30% weight on elevation
-        0.2 * slopeContribution           // 20% weight on slope
+        0.5 * rainfallContribution +
+        0.3 * elevationContribution +
+        0.2 * slopeContribution
       );
 
       // Determine risk level
@@ -108,22 +132,39 @@ export class FloodRiskAPI {
             recent: avgRecent,
             average: avgTotal,
             anomaly: rainfallAnomaly,
-            contribution: rainfallContribution
+            contribution: rainfallContribution,
           },
           elevation: {
-            value: elevationData.elevation,
-            contribution: elevationContribution
+            value: elevation,
+            contribution: elevationContribution,
           },
           slope: {
-            value: elevationData.slope,
-            contribution: slopeContribution
-          }
+            value: slope,
+            contribution: slopeContribution,
+          },
         },
-        timestamp: new Date()
+        timestamp: new Date(),
+        validationWarnings: validationWarnings.length > 0 ? validationWarnings : undefined,
       };
     } catch (error) {
       console.error('Flood Risk Calculation Error:', error);
-      return null;
+      // Return safe fallback — never crash the application
+      const fallback = validateClimateInputs(lat, lon);
+      return {
+        coordinates: fallback.coordinates,
+        riskScore: 0.25,
+        riskLevel: 'medium',
+        factors: {
+          rainfall: { recent: fallback.rainfall, average: fallback.rainfall, anomaly: 0, contribution: 0.1 },
+          elevation: { value: 1500, contribution: 0.3 },
+          slope: { value: 5, contribution: 0.5 },
+        },
+        timestamp: new Date(),
+        validationWarnings: [
+          ...fallback.warnings,
+          { field: 'calculation', message: 'Risk calculation encountered an error. Showing estimated values.', usedFallback: true },
+        ],
+      };
     }
   }
 

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "log_1782926203749_5vwfxtm",
+    "timestamp": "2026-07-01T17:16:43.749Z",
+    "user": "shema@gmail.com",
+    "action": "report_download",
+    "details": "PDF report for Kigali, Rwanda"
+  },
+  {
+    "id": "log_1782926198781_4g6n1am",
+    "timestamp": "2026-07-01T17:16:38.781Z",
+    "user": "shema@gmail.com",
+    "action": "report_download",
+    "details": "CSV report for Kigali, Rwanda"
+  },
+  {
+    "id": "log_1782926164256_wbgjakh",
+    "timestamp": "2026-07-01T17:16:04.256Z",
+    "user": "shema@gmail.com",
+    "action": "report_download",
+    "details": "PDF report for Kigali, Rwanda"
+  },
+  {
+    "id": "log_1782925300349_hout3jc",
+    "timestamp": "2026-07-01T17:01:40.349Z",
+    "user": "shema@gmail.com",
+    "action": "login",
+    "details": "Password login as analyst"
+  },
+  {
+    "id": "log_1782925210139_3eeeg9f",
+    "timestamp": "2026-07-01T17:00:10.139Z",
+    "user": "admin@isi.rw",
+    "action": "login",
+    "details": "Admin password login"
+  },
+  {
+    "id": "log_1782925073611_93rmas1",
+    "timestamp": "2026-07-01T16:57:53.611Z",
+    "user": "alainbe012@gmail.com",
+    "action": "login",
+    "details": "Password login as public_user"
+  },
+  {
+    "id": "log_1782917117502_ikf223a",
+    "timestamp": "2026-07-01T14:45:17.502Z",
+    "user": "admin@isi.rw",
+    "action": "login",
+    "details": "Admin password login"
+  },
+  {
+    "id": "log_1782916485172_p6lebpm",
+    "timestamp": "2026-07-01T14:34:45.172Z",
+    "user": "admin@isi.rw",
+    "action": "login",
+    "details": "Admin password login"
+  },
+  {
+    "id": "log_1782916058161_ttlw9ml",
+    "timestamp": "2026-07-01T14:27:38.161Z",
+    "user": "admin@isi.rw",
+    "action": "login",
+    "details": "Admin password login"
+  }
+]

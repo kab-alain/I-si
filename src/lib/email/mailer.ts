@@ -307,6 +307,55 @@ export async function sendOTPEmail(
 }
 
 /**
+ * Send early warning risk alert email (optional — only when nodemailer is configured)
+ */
+export async function sendRiskAlertEmail(
+  email: string,
+  alert: {
+    type: string;
+    severity: string;
+    score: number;
+    message: string;
+    location: { lat: number; lon: number; label?: string };
+  }
+): Promise<boolean> {
+  if (!EMAIL_USER || !EMAIL_APP_PASSWORD) {
+    console.log(`[Email] Risk alert (mock): ${alert.type} ${alert.score}% → ${email}`);
+    return false;
+  }
+
+  try {
+    const transport = getTransporter();
+    const locationStr =
+      alert.location.label ??
+      `${alert.location.lat.toFixed(4)}, ${alert.location.lon.toFixed(4)}`;
+
+    await transport.sendMail({
+      from: `"${EMAIL_FROM_NAME}" <${EMAIL_USER}>`,
+      to: email,
+      subject: `[${alert.severity.toUpperCase()}] ${alert.type} Risk Alert — ${alert.score}%`,
+      text: `${alert.message}\n\nLocation: ${locationStr}\nScore: ${alert.score}%`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: ${alert.severity === 'critical' ? '#dc2626' : '#f59e0b'}; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+            <h2 style="margin: 0;">Early Warning: ${alert.type} Risk</h2>
+          </div>
+          <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+            <p>${alert.message}</p>
+            <p><strong>Location:</strong> ${locationStr}</p>
+            <p><strong>Risk Score:</strong> ${alert.score}%</p>
+          </div>
+        </div>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error('[Email] Failed to send risk alert:', error);
+    return false;
+  }
+}
+
+/**
  * Verify transporter configuration
  */
 export async function verifyEmailConfig(): Promise<boolean> {

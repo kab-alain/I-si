@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Users, BellRing, CalendarDays, ShieldCheck, RefreshCw, AlertCircle, FileSpreadsheet } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { AlertsManagementPanel } from '@/components/alerts-management-panel';
+import { AuditLogsPanel } from '@/components/audit-logs-panel';
 import toast from 'react-hot-toast';
 
 interface UserRecord {
@@ -15,6 +17,8 @@ interface UserRecord {
   name: string;
   role: 'analyst' | 'public_user' | 'admin';
   createdAt: string;
+  organization?: string;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
 }
 
 interface SubscriptionStats {
@@ -86,6 +90,36 @@ export default function AdminPage() {
         return <Badge variant="outline" className="text-muted-foreground">Public User</Badge>;
     }
   };
+
+  const getApprovalBadge = (status?: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge className="bg-amber-500 text-white">Pending</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejected</Badge>;
+      case 'approved':
+      default:
+        return <Badge variant="outline" className="text-green-600 border-green-300">Approved</Badge>;
+    }
+  };
+
+  const handleApproval = async (userId: string, action: 'approve' | 'reject') => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Action failed');
+      toast.success(data.message);
+      fetchDashboardData(true);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update account');
+    }
+  };
+
+  const pendingAnalysts = users.filter((u) => u.role === 'analyst' && u.approvalStatus === 'pending');
 
   return (
     <div className="min-h-screen bg-background">
@@ -191,8 +225,13 @@ export default function AdminPage() {
                   User Accounts Directory
                 </CardTitle>
                 <CardDescription>
-                  List of registered Analyst and Public accounts verified via one-time login codes.
+                  Manage registered accounts and approve pending analyst registrations.
                 </CardDescription>
+                {pendingAnalysts.length > 0 && (
+                  <Badge className="mt-2 bg-amber-500 text-white">
+                    {pendingAnalysts.length} analyst{pendingAnalysts.length > 1 ? 's' : ''} awaiting approval
+                  </Badge>
+                )}
               </CardHeader>
               <CardContent className="p-0">
                 {loading ? (
@@ -214,7 +253,10 @@ export default function AdminPage() {
                           <th className="p-4 font-semibold">User Name</th>
                           <th className="p-4 font-semibold">Email</th>
                           <th className="p-4 font-semibold">Role</th>
+                          <th className="p-4 font-semibold">Organization</th>
+                          <th className="p-4 font-semibold">Status</th>
                           <th className="p-4 font-semibold">Registered At</th>
+                          <th className="p-4 font-semibold">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -225,7 +267,10 @@ export default function AdminPage() {
                           </td>
                           <td className="p-4">admin@isi.rw</td>
                           <td className="p-4">{getRoleBadge('admin')}</td>
+                          <td className="p-4 text-xs text-muted-foreground">—</td>
+                          <td className="p-4">{getApprovalBadge('approved')}</td>
                           <td className="p-4 text-xs text-muted-foreground">Hardcoded Core</td>
+                          <td className="p-4">—</td>
                         </tr>
                         
                         {users.map((user) => (
@@ -233,7 +278,23 @@ export default function AdminPage() {
                             <td className="p-4 font-medium">{user.name}</td>
                             <td className="p-4 text-muted-foreground">{user.email}</td>
                             <td className="p-4">{getRoleBadge(user.role)}</td>
+                            <td className="p-4 text-xs text-muted-foreground">{user.organization || '—'}</td>
+                            <td className="p-4">{getApprovalBadge(user.approvalStatus)}</td>
                             <td className="p-4 text-xs text-muted-foreground">{formatDate(user.createdAt)}</td>
+                            <td className="p-4">
+                              {user.role === 'analyst' && user.approvalStatus === 'pending' ? (
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => handleApproval(user.id, 'approve')}>
+                                    Approve
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="h-7 text-xs text-destructive" onClick={() => handleApproval(user.id, 'reject')}>
+                                    Reject
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -284,6 +345,12 @@ export default function AdminPage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Early Warning Alerts & Audit Logs */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-8">
+            <AlertsManagementPanel />
+            <AuditLogsPanel />
           </div>
         </div>
       </AuthGuard>

@@ -1,21 +1,26 @@
 import { NextResponse } from 'next/server';
 import { createUser, getUserByEmailAndRole } from '@/lib/db/users-db';
+import { hashPassword, validatePassword } from '@/lib/auth/password';
 import { UserRole } from '@/lib/types/user';
 
 export async function POST(request: Request) {
   try {
-    const { email, name, role } = await request.json();
+    const { email, name, role, password, organization } = await request.json();
 
-    if (!email || !name || !role) {
+    if (!email || !name || !role || !password) {
       return NextResponse.json(
-        { error: 'Email, name, and role are required fields' },
+        { error: 'Email, name, password, and role are required fields' },
         { status: 400 }
       );
     }
 
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return NextResponse.json({ error: passwordError }, { status: 400 });
+    }
+
     const trimmedEmail = email.toLowerCase().trim();
 
-    // Check if role is allowed (admin cannot be signed up through public API)
     if (role !== 'analyst' && role !== 'public_user') {
       return NextResponse.json(
         { error: 'Invalid signup role. Must be analyst or public_user' },
@@ -23,7 +28,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user already exists with this role
+    if (role === 'analyst' && !organization?.trim()) {
+      return NextResponse.json(
+        { error: 'Organization is required for analyst registration' },
+        { status: 400 }
+      );
+    }
+
     const existingUser = await getUserByEmailAndRole(trimmedEmail, role as UserRole);
     if (existingUser) {
       return NextResponse.json(
@@ -32,17 +43,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create user
-    const newUser = await createUser(trimmedEmail, name, role as UserRole);
+    const passwordHash = await hashPassword(password);
+    const newUser = await createUser(trimmedEmail, name, role as UserRole, passwordHash, {
+      organization: role === 'analyst' ? organization.trim() : undefined,
+    });
+
+    const message =
+      role === 'analyst'
+        ? 'Analyst account submitted. Please wait for admin approval before logging in.'
+        : 'Account created successfully! Please log in.';
 
     return NextResponse.json(
-      { message: 'User registered successfully', user: newUser },
+      { message, user: newUser, requiresApproval: role === 'analyst' },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API Auth Signup] Error:', error);
     return NextResponse.json(
-      { error: error.message || 'Internal Server Error' },
+      { error: error instanceof Error ? error.message : 'Internal Server Error' },
       { status: 500 }
     );
   }

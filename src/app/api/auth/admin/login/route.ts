@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createAuditLog } from '@/lib/db/audit-logs-db';
 
 export async function POST(request: Request) {
   try {
@@ -22,6 +23,8 @@ export async function POST(request: Request) {
         role: 'admin',
         createdAt: new Date().toISOString(),
       };
+
+      await createAuditLog(trimmedEmail, 'login', 'Admin password login');
 
       return NextResponse.json(
         { message: 'Admin logged in successfully', user: adminUser },

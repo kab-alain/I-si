@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, LogIn, UserPlus, ArrowLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { canViewDashboard, getRoleLabel } from '@/lib/auth/permissions';
+import type { UserRole } from '@/lib/types/user';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -73,8 +75,8 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
 
   // 2. Authenticated but Role Restricted
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    const readableRole = user.role === 'public_user' ? 'Public User' : user.role === 'analyst' ? 'Analyst' : 'Administrator';
-    const requiredRoles = allowedRoles.map(r => r === 'public_user' ? 'Public User' : r === 'analyst' ? 'Analyst' : 'Administrator');
+    const readableRole = getRoleLabel(user.role);
+    const requiredRoles = allowedRoles.map((r) => getRoleLabel(r));
 
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
@@ -97,7 +99,7 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
             </p>
           </div>
           <div className="flex flex-col gap-2 pt-2">
-            {user.role === 'public_user' && allowedRoles.includes('analyst') && (
+            {user.role === 'public_user' && allowedRoles.some((r) => canViewDashboard(r as UserRole)) && (
               <div className="text-xs p-3 bg-muted rounded-lg text-left text-muted-foreground mb-2">
                 💡 <strong>Need Analyst access?</strong> Log out and sign up for a new account selecting the <strong>Analyst</strong> role to view advanced charts.
               </div>

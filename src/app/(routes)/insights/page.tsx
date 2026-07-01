@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, RefreshCw, Calendar, History, TrendingUp } from 'lucide-react';
 import { useHistoricalTemperature, useHistoricalPrecipitation, useClimateStatistics, useMultiLocationComparison, useHumidityData, useWindData, useSolarRadiationData } from '@/hooks/use-historical-climate-data';
+import { useLocationAnalytics } from '@/hooks/use-location-analytics';
+import { DownloadReportIconButton } from '@/components/download-report-button';
+import { derivePrediction } from '@/lib/reports/export-report';
 import { TemperatureChart } from '@/components/charts/temperature-chart';
 import { PrecipitationChart } from '@/components/charts/precipitation-chart';
 import { ComparisonChart } from '@/components/charts/comparison-chart';
@@ -46,6 +49,9 @@ export default function InsightsPage() {
   const { data: humidityData } = useHumidityData(timeRange);
   const { data: windData } = useWindData(timeRange);
   const { data: solarData} = useSolarRadiationData(timeRange);
+
+  // Default location for dashboard report (Kigali, Rwanda)
+  const { data: locationRisk } = useLocationAnalytics(-1.9403, 29.8739, viewMode === 'current');
 
   // Track previous summary to prevent unnecessary updates
   const prevSummaryRef = useRef<string | null>(null);
@@ -170,6 +176,19 @@ export default function InsightsPage() {
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
+
+              <DownloadReportIconButton
+                reportData={{
+                  location: 'Kigali, Rwanda',
+                  floodRisk: locationRisk?.floodRisk.score ?? 0,
+                  droughtRisk: locationRisk?.droughtRisk.score ?? 0,
+                  prediction: derivePrediction(
+                    locationRisk?.floodRisk.score ?? 0,
+                    locationRisk?.droughtRisk.score ?? 0
+                  ),
+                  timestamp: new Date().toISOString(),
+                }}
+              />
             </div>
           )}
         </div>

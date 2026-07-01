@@ -33,6 +33,15 @@ export async function POST(request: Request) {
       );
     }
 
+    if (role === 'analyst' && user.approvalStatus !== 'approved') {
+      return NextResponse.json(
+        { error: user.approvalStatus === 'pending'
+            ? 'Your analyst account is pending admin approval.'
+            : 'Your analyst account was not approved.' },
+        { status: 403 }
+      );
+    }
+
     // Generate OTP in database
     const otp = await createOTP(trimmedEmail, role as UserRole);
 

@@ -8,6 +8,12 @@ import { AlertTriangle, TrendingUp, TrendingDown, Minus, MapPin } from 'lucide-r
 import { useClickedCoordinates } from '@/lib/store/map-store';
 import { CoordinateDisplay } from '@/components/coordinate-display';
 import { useLocationAnalytics } from '@/hooks/use-location-analytics';
+import { useEarlyWarningAlerts } from '@/hooks/use-early-warning-alerts';
+import { AlertBanner } from '@/components/alert-banner';
+import { RiskRecommendations } from '@/components/risk-recommendations';
+import { ValidationWarningBanner } from '@/components/validation-warning-banner';
+import { DownloadReportIconButton } from '@/components/download-report-button';
+import { derivePrediction } from '@/lib/reports/export-report';
 import type { RiskLevel } from '@/types';
 
 // Mock data - in production this would come from your API
@@ -86,6 +92,19 @@ export function RiskSummary() {
     !!clickedCoordinates
   );
 
+  const { alerts, dismissAlert } = useEarlyWarningAlerts({
+    lat: clickedCoordinates?.lat,
+    lon: clickedCoordinates?.lon,
+    floodScore: analytics?.floodRisk.score ?? 0,
+    droughtScore: analytics?.droughtRisk.score ?? 0,
+    enabled: !!analytics?.isComplete,
+  });
+
+  const validationWarnings = [
+    ...(analytics?.floodRisk.details?.validationWarnings ?? []),
+    ...(analytics?.droughtRisk.details?.validationWarnings ?? []),
+  ];
+
   // Calculate overall risk from real data
   const calculateOverallRisk = () => {
     if (!analytics) return mockRiskData.overall;
@@ -147,6 +166,11 @@ export function RiskSummary() {
 
   return (
     <div className="space-y-4">
+      <AlertBanner alerts={alerts} onDismiss={dismissAlert} />
+      {validationWarnings.length > 0 && (
+        <ValidationWarningBanner warnings={validationWarnings} />
+      )}
+
       {/* Coordinate Display */}
       <CoordinateDisplay />
 
@@ -274,6 +298,26 @@ export function RiskSummary() {
           </div>
         </CardContent>
       </Card>
+
+      {analytics && (
+        <>
+          <RiskRecommendations
+            floodLevel={analytics.floodRisk.level}
+            droughtLevel={analytics.droughtRisk.level}
+          />
+          <DownloadReportIconButton
+            reportData={{
+              location: clickedCoordinates
+                ? `${clickedCoordinates.lat.toFixed(4)}, ${clickedCoordinates.lon.toFixed(4)}`
+                : 'Rwanda',
+              floodRisk: analytics.floodRisk.score,
+              droughtRisk: analytics.droughtRisk.score,
+              prediction: derivePrediction(analytics.floodRisk.score, analytics.droughtRisk.score),
+              timestamp: new Date().toISOString(),
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getUserByEmailAndRole } from '@/lib/db/users-db';
 import { verifyOTP } from '@/lib/db/otps-db';
+import { createAuditLog } from '@/lib/db/audit-logs-db';
 import { UserRole } from '@/lib/types/user';
 
 export async function POST(request: Request) {
@@ -41,6 +42,17 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
+
+    if (role === 'analyst' && user.approvalStatus !== 'approved') {
+      return NextResponse.json(
+        { error: user.approvalStatus === 'pending'
+            ? 'Your analyst account is pending admin approval.'
+            : 'Your analyst account was not approved.' },
+        { status: 403 }
+      );
+    }
+
+    await createAuditLog(trimmedEmail, 'login', `OTP login as ${role}`);
 
     return NextResponse.json(
       { message: 'Logged in successfully', user },

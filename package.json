@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "node scripts/patch-pg-empty-password.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.72",

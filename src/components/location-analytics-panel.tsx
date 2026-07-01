@@ -5,7 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { X, MapPin, Thermometer, Droplets, AlertTriangle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocationAnalytics } from '@/hooks/use-location-analytics';
+import { useEarlyWarningAlerts } from '@/hooks/use-early-warning-alerts';
+import { AlertBanner } from '@/components/alert-banner';
+import { RiskRecommendations } from '@/components/risk-recommendations';
+import { ValidationWarningBanner } from '@/components/validation-warning-banner';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { ValidationWarning } from '@/lib/validation/climate-data';
 
 interface LocationAnalyticsPanelProps {
   lat: number;
@@ -15,6 +20,19 @@ interface LocationAnalyticsPanelProps {
 
 export function LocationAnalyticsPanel({ lat, lon, onClose }: LocationAnalyticsPanelProps) {
   const { data, isLoading, error } = useLocationAnalytics(lat, lon, true);
+
+  const { alerts, dismissAlert } = useEarlyWarningAlerts({
+    lat,
+    lon,
+    floodScore: data?.floodRisk.score ?? 0,
+    droughtScore: data?.droughtRisk.score ?? 0,
+    enabled: !!data?.isComplete,
+  });
+
+  const validationWarnings: ValidationWarning[] = [
+    ...(data?.floodRisk.details?.validationWarnings ?? []),
+    ...(data?.droughtRisk.details?.validationWarnings ?? []),
+  ];
 
   const getRiskColor = (level: string) => {
     switch (level.toLowerCase()) {
@@ -81,6 +99,10 @@ export function LocationAnalyticsPanel({ lat, lon, onClose }: LocationAnalyticsP
         </CardHeader>
 
         <CardContent className="space-y-3">
+          <AlertBanner alerts={alerts} onDismiss={dismissAlert} />
+          {validationWarnings.length > 0 && (
+            <ValidationWarningBanner warnings={validationWarnings} />
+          )}
           {isLoading ? (
             <>
               <Skeleton className="h-16 w-full" />
@@ -185,6 +207,12 @@ export function LocationAnalyticsPanel({ lat, lon, onClose }: LocationAnalyticsP
               <div className="text-xs text-muted-foreground text-center pt-2 border-t">
                 Updated: {data.timestamp.toLocaleTimeString()}
               </div>
+
+              <RiskRecommendations
+                floodLevel={data.floodRisk.level}
+                droughtLevel={data.droughtRisk.level}
+                compact
+              />
             </>
           ) : null}
         </CardContent>
