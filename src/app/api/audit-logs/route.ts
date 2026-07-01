@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createAuditLog, getAuditLogs } from '@/lib/db/audit-logs-db';
+import { getAuditLogs } from '@/lib/db/audit-logs-db';
+import { saveAuditLog } from '@/lib/audit';
 import type { AuditAction } from '@/lib/types/audit-log';
 
 export async function GET(request: Request) {
@@ -30,8 +31,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
-    const entry = await createAuditLog(user, action, details);
-    return NextResponse.json({ log: entry });
+    await saveAuditLog(action, { user, details, time: new Date().toISOString() });
+    return NextResponse.json({ log: { action, user, details, timestamp: new Date().toISOString() } });
   } catch (error: unknown) {
     console.error('[API Audit Logs POST]', error);
     return NextResponse.json({ error: 'Failed to create audit log' }, { status: 500 });

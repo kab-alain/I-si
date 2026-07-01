@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getUserByEmailAndRole } from '@/lib/db/users-db';
 import { verifyPassword } from '@/lib/auth/password';
-import { createAuditLog } from '@/lib/db/audit-logs-db';
+import { saveAuditLog } from '@/lib/audit';
 import { UserRole } from '@/lib/types/user';
 
 export async function POST(request: Request) {
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
     const { passwordHash: _, ...safeUser } = user;
 
-    await createAuditLog(trimmedEmail, 'login', `Password login as ${role}`);
+    await saveAuditLog('login', { user: trimmedEmail, details: `Password login as ${role}`, time: new Date().toISOString() });
 
     return NextResponse.json(
       { message: 'Logged in successfully', user: safeUser },

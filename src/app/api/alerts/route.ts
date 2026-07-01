@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllAlerts, saveAlert, acknowledgeAlert, deleteAlert } from '@/lib/db/alerts-db';
 import { evaluateRiskAlerts } from '@/lib/alerts/alert-engine';
-import { createAuditLog } from '@/lib/db/audit-logs-db';
+import { saveAuditLog } from '@/lib/audit';
 import { sendRiskAlertEmail } from '@/lib/email/mailer';
 import type { AlertEvaluationInput } from '@/lib/types/alerts';
 
@@ -65,10 +65,13 @@ export async function POST(request: Request) {
       const saved = await saveAlert(alert);
       savedAlerts.push(saved);
 
-      await createAuditLog(
-        input.user || input.userEmail || 'system',
+      await saveAuditLog(
         'alert_created',
-        `${alert.type} alert: score ${alert.score}% at ${alert.location.lat}, ${alert.location.lon}`
+        {
+          user: input.user || input.userEmail || 'system',
+          details: `${alert.type} alert: score ${alert.score}% at ${alert.location.lat}, ${alert.location.lon}`,
+          time: new Date().toISOString()
+        }
       );
 
       // Optionally send email if configured and user email provided

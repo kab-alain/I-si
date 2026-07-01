@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getUserByEmailAndRole } from '@/lib/db/users-db';
 import { verifyOTP } from '@/lib/db/otps-db';
-import { createAuditLog } from '@/lib/db/audit-logs-db';
+import { saveAuditLog } from '@/lib/audit';
 import { UserRole } from '@/lib/types/user';
 
 export async function POST(request: Request) {
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await createAuditLog(trimmedEmail, 'login', `OTP login as ${role}`);
+    await saveAuditLog('login', { user: trimmedEmail, details: `OTP login as ${role}`, time: new Date().toISOString() });
 
     return NextResponse.json(
       { message: 'Logged in successfully', user },

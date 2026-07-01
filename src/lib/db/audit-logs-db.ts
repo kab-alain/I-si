@@ -1,31 +1,12 @@
 /**
- * File-based audit log storage (development-friendly fallback).
+ * PostgreSQL-based audit log storage (replaces file-based storage).
  */
 
-import { promises as fs } from 'fs';
-import path from 'path';
+import db from '@/lib/db';
 import type { AuditAction, AuditLogEntry } from '@/lib/types/audit-log';
-
-const LOGS_FILE = path.join(process.cwd(), 'data', 'audit-logs.json');
 
 function generateLogId(): string {
   return `log_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-}
-
-async function ensureLogsFile(): Promise<AuditLogEntry[]> {
-  try {
-    const content = await fs.readFile(LOGS_FILE, 'utf-8');
-    return JSON.parse(content) as AuditLogEntry[];
-  } catch {
-    await fs.mkdir(path.dirname(LOGS_FILE), { recursive: true });
-    await fs.writeFile(LOGS_FILE, '[]', 'utf-8');
-    return [];
-  }
-}
-
-async function writeLogs(logs: AuditLogEntry[]): Promise<void> {
-  await fs.mkdir(path.dirname(LOGS_FILE), { recursive: true });
-  await fs.writeFile(LOGS_FILE, JSON.stringify(logs, null, 2), 'utf-8');
 }
 
 export async function createAuditLog(
@@ -33,7 +14,6 @@ export async function createAuditLog(
   action: AuditAction,
   details?: string
 ): Promise<AuditLogEntry> {
-  const logs = await ensureLogsFile();
   const entry: AuditLogEntry = {
     id: generateLogId(),
     timestamp: new Date().toISOString(),
@@ -41,13 +21,22 @@ export async function createAuditLog(
     action,
     details,
   };
-  logs.unshift(entry);
-  const trimmed = logs.slice(0, 1000);
-  await writeLogs(trimmed);
+  await db.query(
+    "INSERT INTO audit_logs (action, data) VALUES ($1, $2)",
+    [action, JSON.stringify(entry)]
+  );
   return entry;
 }
 
 export async function getAuditLogs(limit = 100): Promise<AuditLogEntry[]> {
-  const logs = await ensureLogsFile();
-  return logs.slice(0, limit);
+  const result = await db.query(
+    "SELECT data FROM audit_logs ORDER BY id DESC LIMIT $1",
+    [limit]
+  );
+  return result.rows.map((row: { data: AuditLogEntry | string }) => {
+    if (typeof row.data === 'string') {
+      return JSON.parse(row.data) as AuditLogEntry;
+    }
+    return row.data as AuditLogEntry;
+  });
 }
