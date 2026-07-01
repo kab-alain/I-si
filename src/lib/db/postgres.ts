@@ -103,6 +103,22 @@ export async function initDb() {
       );
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id VARCHAR(255) PRIMARY KEY,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        lat DOUBLE PRECISION NOT NULL,
+        lon DOUBLE PRECISION NOT NULL,
+        location VARCHAR(255),
+        preferences JSONB NOT NULL,
+        is_active BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_notified TIMESTAMP,
+        verified_at TIMESTAMP,
+        unsubscribe_token VARCHAR(255) NOT NULL UNIQUE
+      );
+    `);
+
     dbInitialized = true;
     console.log('[Postgres] Database schema initialized successfully');
   } catch (error) {
