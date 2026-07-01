@@ -225,6 +225,88 @@ export async function sendWelcomeEmail(
 }
 
 /**
+ * Send an OTP code email for login
+ */
+export async function sendOTPEmail(
+  email: string,
+  otp: string,
+  role: string
+): Promise<boolean> {
+  const displayRole = role === 'analyst' ? 'Analyst' : 'Public User';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login OTP Code</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+          <h1 style="color: white; margin: 0;">Rwanda Climate Risk Platform</h1>
+          <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0;">Secure Role-Based Authentication</p>
+        </div>
+
+        <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #ddd; border-top: none;">
+          <h2 style="color: #333; margin-top: 0;">Your Verification Code</h2>
+          <p>You requested a one-time verification code to log in as an <strong>${displayRole}</strong>.</p>
+          <p>Please enter the following 6-digit OTP code in the application to complete your login:</p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="background: #e0f2fe; border: 2px dashed #0284c7; color: #0369a1; padding: 15px 30px; display: inline-block; font-size: 32px; font-weight: bold; letter-spacing: 5px; border-radius: 8px;">
+              ${otp}
+            </div>
+          </div>
+
+          <p style="color: #ef4444; font-size: 14px; font-weight: 500;">Note: This code is only valid for 5 minutes and can only be used once.</p>
+          <p style="color: #666; font-size: 14px; margin-top: 30px;">If you did not initiate this login request, please ignore this email.</p>
+        </div>
+
+        <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
+          <p>© ${new Date().getFullYear()} Rwanda Climate Risk Platform. All rights reserved.</p>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const text = `
+    Rwanda Climate Risk Platform - Login OTP Code
+    
+    You requested a one-time verification code to log in as an ${displayRole}.
+    
+    Your verification code is: ${otp}
+    
+    This code is only valid for 5 minutes and can only be used once.
+    
+    If you did not initiate this request, you can safely ignore this email.
+    
+    © ${new Date().getFullYear()} Rwanda Climate Risk Platform. All rights reserved.
+  `;
+
+  try {
+    const transport = getTransporter();
+    const info = await transport.sendMail({
+      from: `"${EMAIL_FROM_NAME}" <${EMAIL_USER}>`,
+      to: email,
+      subject: `${otp} is your verification code for Rwanda Climate Risk Platform`,
+      text,
+      html,
+    });
+
+    console.log('[Email] OTP sent to:', email, 'MessageID:', info.messageId);
+    return true;
+  } catch (error) {
+    console.log('\n=========================================');
+    console.log(`[MOCK EMAIL SERVICE] (Set EMAIL_USER & EMAIL_APP_PASSWORD in .env.local for real emails)`);
+    console.log(`To: ${email}`);
+    console.log(`Role: ${displayRole}`);
+    console.log(`Verification Code (OTP): ${otp}`);
+    console.log('=========================================\n');
+    return true;
+  }
+}
+
+/**
  * Verify transporter configuration
  */
 export async function verifyEmailConfig(): Promise<boolean> {

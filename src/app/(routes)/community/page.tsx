@@ -11,6 +11,7 @@ import { MapPin, Search, Building2, Locate, Navigation as NavIcon, Phone, Mail, 
 import Map, { Marker, Popup, NavigationControl, GeolocateControl } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import toast from 'react-hot-toast';
+import { AuthGuard } from '@/components/auth-guard';
 
 type SectorOffice = {
   province: string;
@@ -140,7 +141,8 @@ export default function CommunityPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="container mx-auto px-4 py-8">
+      <AuthGuard>
+        <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2">Community Outreach</h1>
           <p className="text-muted-foreground">
@@ -425,7 +427,8 @@ export default function CommunityPage() {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
+        </div>
+      </AuthGuard>
     </div>
   );
 }

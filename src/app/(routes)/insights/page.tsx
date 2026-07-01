@@ -22,6 +22,7 @@ import { ExtremeWeatherEvents } from './components/extreme-weather-events';
 import { HistoricalMode } from './components/historical-mode';
 import { InsightsAIHelper } from '@/components/insights-ai-helper';
 import toast from 'react-hot-toast';
+import { AuthGuard } from '@/components/auth-guard';
 
 type ViewMode = 'current' | 'historical';
 type ChartType = 'line' | 'bar' | 'area';
@@ -95,7 +96,8 @@ export default function InsightsPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="container mx-auto px-4 py-8">
+      <AuthGuard allowedRoles={['analyst', 'admin']}>
+        <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -421,7 +423,8 @@ export default function InsightsPage() {
             </div>
           </>
         )}
-      </div>
+        </div>
+      </AuthGuard>
     </div>
   );
 }
