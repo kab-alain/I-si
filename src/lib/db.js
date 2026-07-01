@@ -1,7 +1,4 @@
-import { Pool } from "pg";
+import { pool } from "./db/postgres";
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-export default pool;    
+export default pool;
+    
