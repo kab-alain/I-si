@@ -308,12 +308,19 @@ export function RiskSummary() {
           <DownloadReportIconButton
             reportData={{
               location: clickedCoordinates
-                ? `${clickedCoordinates.lat.toFixed(4)}, ${clickedCoordinates.lon.toFixed(4)}`
+                ? `${clickedCoordinates.lat.toFixed(4)}°N, ${clickedCoordinates.lon.toFixed(4)}°E`
                 : 'Rwanda',
               floodRisk: analytics.floodRisk.score,
               droughtRisk: analytics.droughtRisk.score,
               prediction: derivePrediction(analytics.floodRisk.score, analytics.droughtRisk.score),
               timestamp: new Date().toISOString(),
+              timeRange: 'Current',
+              alerts: alerts.map((a) => ({
+                kind: a.type.charAt(0).toUpperCase() + a.type.slice(1),
+                severity: a.severity,
+                date: new Date(a.createdAt).toLocaleString(),
+                description: a.message,
+              })),
             }}
           />
         </>

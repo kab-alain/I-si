@@ -187,6 +187,7 @@ export default function InsightsPage() {
                     locationRisk?.droughtRisk.score ?? 0
                   ),
                   timestamp: new Date().toISOString(),
+                  timeRange: `Last ${timeRange} days`,
                 }}
               />
             </div>
