@@ -191,7 +191,7 @@ export function AuthModal() {
                   <Input
                     id="login-email"
                     type="email"
-                    placeholder={role === 'admin' ? 'name@example.com'}
+                   placeholder={role === 'admin' ? 'name@example.com' : 'Enter your email'}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
