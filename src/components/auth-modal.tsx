@@ -216,12 +216,6 @@ export function AuthModal() {
                     required
                   />
                 </div>
-                {role === 'admin' && (
-                  <p className="text-xs text-muted-foreground bg-primary/5 p-2 rounded border border-primary/10">
-                    Demo: <code className="font-semibold"></code> /{' '}
-                    <code className="font-semibold"></code>
-                  </p>
-                )}
                 {role === 'analyst' && (
                   <p className="text-xs text-muted-foreground">
                     Analyst accounts must be approved by an administrator before login.
