@@ -191,7 +191,7 @@ export function AuthModal() {
                   <Input
                     id="login-email"
                     type="email"
-                    placeholder={role === 'admin' ? 'admin@isi.rw' : 'name@example.com'}
+                    placeholder={role === 'admin' ? 'name@example.com'}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
@@ -218,8 +218,8 @@ export function AuthModal() {
                 </div>
                 {role === 'admin' && (
                   <p className="text-xs text-muted-foreground bg-primary/5 p-2 rounded border border-primary/10">
-                    Demo: <code className="font-semibold">admin@isi.rw</code> /{' '}
-                    <code className="font-semibold">admin1234</code>
+                    Demo: <code className="font-semibold"></code> /{' '}
+                    <code className="font-semibold"></code>
                   </p>
                 )}
                 {role === 'analyst' && (
