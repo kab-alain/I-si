@@ -1,19 +1,19 @@
-import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
 import { buildContextPrompt } from '../context/prompt-builder';
 import { buildAIContext } from '../context/context-provider';
 import type { ContextProviderOptions } from '../context/types';
 
 /**
  * AI SDK Configuration
- * Using OpenAI for climate intelligence with context awareness
+ * Using Anthropic Claude for climate intelligence with context awareness
  */
 
 export const ai = {
-  // GPT-4 Turbo - Best for complex climate analysis
-  model: openai('gpt-4-turbo-preview'),
+  // Claude Sonnet - Best for complex climate analysis
+  model: anthropic('claude-sonnet-4-5'),
 
-  // GPT-3.5 Turbo - Fast for simple queries
-  fastModel: openai('gpt-3.5-turbo'),
+  // Claude Haiku - Fast for simple queries
+  fastModel: anthropic('claude-haiku-4-5'),
 };
 
 
