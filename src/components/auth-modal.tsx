@@ -29,6 +29,8 @@ export function AuthModal() {
   const [role, setRole] = useState<'analyst' | 'public_user' | 'admin'>('public_user');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
 
   // Signup States
   const [signupName, setSignupName] = useState('');
@@ -44,6 +46,8 @@ export function AuthModal() {
       setPassword('');
       setSignupPassword('');
       setSignupConfirmPassword('');
+      setShowOtpInput(false);
+      setOtpCode('');
     }
   }, [isAuthModalOpen]);
 
@@ -131,15 +135,69 @@ export function AuthModal() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
 
-      login(data.user);
-      setAuthModalOpen(false);
-      toast.success(
-        role === 'admin'
-          ? 'Administrator session active'
-          : `Welcome back, ${data.user.name}!`
-      );
+      if (data.requiresOTP) {
+        setShowOtpInput(true);
+        setOtpCode('');
+        toast.success('Verification code sent to your email.');
+      } else {
+        login(data.user);
+        setAuthModalOpen(false);
+        toast.success(
+          role === 'admin'
+            ? 'Administrator session active'
+            : `Welcome back, ${data.user.name}!`
+        );
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.length !== 6) {
+      toast.error('Please enter a valid 6-digit code');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role, otp: otpCode }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Verification failed');
+
+      login(data.user);
+      setAuthModalOpen(false);
+      toast.success(`Welcome back, ${data.user.name}!`);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to resend code');
+
+      toast.success('A new verification code has been sent!');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to resend code');
     } finally {
       setLoading(false);
     }
@@ -159,7 +217,11 @@ export function AuthModal() {
 
         <Tabs
           value={authModalTab}
-          onValueChange={(v) => setAuthModalTab(v as 'login' | 'signup')}
+          onValueChange={(v) => {
+            setAuthModalTab(v as 'login' | 'signup');
+            setShowOtpInput(false);
+            setOtpCode('');
+          }}
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -169,72 +231,135 @@ export function AuthModal() {
 
           {/* LOGIN */}
           <TabsContent value="login">
-            <form onSubmit={handleUserLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-role">Select Role</Label>
-                <select
-                  id="login-role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as typeof role)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <option value="public_user">Public User</option>
-                  <option value="analyst">Analyst</option>
-                  <option value="admin">Administrator</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="login-email">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="login-email"
-                    type="email"
-                   placeholder={role === 'admin' ? 'name@example.com' : 'Enter your email'}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                    className="pl-9"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Password</Label>
-                <div className="relative">
-                  <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                    className="pl-9"
-                    required
-                  />
-                </div>
-                {role === 'analyst' && (
-                  <p className="text-xs text-muted-foreground">
-                    Analyst accounts must be approved by an administrator before login.
+            {showOtpInput ? (
+              <form onSubmit={handleOtpSubmit} className="space-y-4">
+                <div className="text-center space-y-2 mb-2">
+                  <h3 className="text-lg font-semibold">Enter Verification Code</h3>
+                  <p className="text-sm text-muted-foreground">
+                    A 6-digit verification code has been sent to <strong className="text-foreground">{email}</strong>.
                   </p>
-                )}
-              </div>
+                </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...
-                  </>
-                ) : (
-                  <>
-                    <Shield className="mr-2 h-4 w-4" /> Log In
-                  </>
-                )}
-              </Button>
-            </form>
+                <div className="space-y-2">
+                  <Label htmlFor="otp-code">One-Time Password (OTP)</Label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="otp-code"
+                      type="text"
+                      maxLength={6}
+                      placeholder="Enter 6-digit code"
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      disabled={loading}
+                      className="pl-9 text-center font-mono text-lg tracking-widest"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowOtpInput(false)}
+                    disabled={loading}
+                  >
+                    Back
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...
+                      </>
+                    ) : (
+                      'Verify & Log In'
+                    )}
+                  </Button>
+                </div>
+
+                <div className="text-center mt-2">
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    onClick={handleResendOtp}
+                    disabled={loading}
+                    className="text-xs text-primary"
+                  >
+                    Didn&apos;t receive code? Resend Code
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleUserLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-role">Select Role</Label>
+                  <select
+                    id="login-role"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as typeof role)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="public_user">Public User</option>
+                    <option value="analyst">Analyst</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder={role === 'admin' ? 'name@example.com' : 'Enter your email'}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={loading}
+                      className="pl-9"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="login-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={loading}
+                      className="pl-9"
+                      required
+                    />
+                  </div>
+                  {role === 'analyst' && (
+                    <p className="text-xs text-muted-foreground">
+                      Analyst accounts must be approved by an administrator before login.
+                    </p>
+                  )}
+                </div>
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="mr-2 h-4 w-4" /> Log In
+                    </>
+                  )}
+                </Button>
+              </form>
+            )}
           </TabsContent>
 
           {/* SIGNUP */}

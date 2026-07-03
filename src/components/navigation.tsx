@@ -31,7 +31,14 @@ export function Navigation() {
   }, []);
 
   // Determine active navigation links based on role
-  const navigation = [...baseNavigation];
+  const navigation = baseNavigation.filter((item) => {
+    if (item.href === '/insights') {
+      if (mounted && isAuthenticated && user?.role === 'public_user') {
+        return false;
+      }
+    }
+    return true;
+  });
   if (mounted && isAuthenticated && user?.role === 'admin') {
     navigation.push({ name: 'Admin', href: '/admin', icon: Shield });
   }

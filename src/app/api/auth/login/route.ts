@@ -3,6 +3,8 @@ import { getUserByEmailAndRole } from '@/lib/db/users-db';
 import { verifyPassword } from '@/lib/auth/password';
 import { saveAuditLog } from '@/lib/audit';
 import { UserRole } from '@/lib/types/user';
+import { createOTP } from '@/lib/db/otps-db';
+import { sendOTPEmail } from '@/lib/email/mailer';
 
 export async function POST(request: Request) {
   try {
@@ -56,6 +58,17 @@ export async function POST(request: Request) {
     }
 
     const { passwordHash: _, ...safeUser } = user;
+
+    // For analysts and public users, require OTP verification first
+    if (role === 'analyst' || role === 'public_user') {
+      const otp = await createOTP(trimmedEmail, role as UserRole);
+      await sendOTPEmail(trimmedEmail, otp, role);
+
+      return NextResponse.json(
+        { requiresOTP: true, message: 'Verification code sent to your email' },
+        { status: 200 }
+      );
+    }
 
     await saveAuditLog('login', { user: trimmedEmail, details: `Password login as ${role}`, time: new Date().toISOString() });
 

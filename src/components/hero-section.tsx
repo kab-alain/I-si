@@ -56,11 +56,13 @@ export function HeroSection() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="text-lg px-8">
-                  <Link href="/insights">
-                    View Insights
-                  </Link>
-                </Button>
+                {user?.role !== 'public_user' && (
+                  <Button asChild variant="outline" size="lg" className="text-lg px-8">
+                    <Link href="/insights">
+                      View Insights
+                    </Link>
+                  </Button>
+                )}
               </>
             ) : (
               mounted && (
