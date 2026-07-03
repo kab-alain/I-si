@@ -407,6 +407,7 @@ export async function sendOTPEmail(
     console.log('[Email] OTP sent to:', email, 'MessageID:', info.messageId);
     return true;
   } catch (error) {
+    console.error('[Email] Failed to send OTP email:', error);
     console.log('\n=========================================');
     console.log(`[MOCK EMAIL SERVICE] (Set EMAIL_USER & EMAIL_APP_PASSWORD in .env.local for real emails)`);
     console.log(`To: ${email}`);
