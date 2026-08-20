@@ -115,9 +115,6 @@ export function LocationAnalyticsPanel({ lat, lon, onClose }: LocationAnalyticsP
 
         <CardContent className="space-y-3">
           <AlertBanner alerts={alerts} onDismiss={dismissAlert} />
-          {validationWarnings.length > 0 && (
-            <ValidationWarningBanner warnings={validationWarnings} />
-          )}
           {isLoading ? (
             <>
               <Skeleton className="h-16 w-full" />
@@ -228,6 +225,10 @@ export function LocationAnalyticsPanel({ lat, lon, onClose }: LocationAnalyticsP
                 droughtLevel={data.droughtRisk.level}
                 compact
               />
+
+              {validationWarnings.length > 0 && (
+                <ValidationWarningBanner warnings={validationWarnings} />
+              )}
             </>
           ) : null}
         </CardContent>
