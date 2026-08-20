@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { X, MapPin, Thermometer, Droplets, AlertTriangle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocationAnalytics } from '@/hooks/use-location-analytics';
+import { useReverseGeocode } from '@/hooks/use-reverse-geocode';
 import { useEarlyWarningAlerts } from '@/hooks/use-early-warning-alerts';
 import { AlertBanner } from '@/components/alert-banner';
 import { RiskRecommendations } from '@/components/risk-recommendations';
@@ -20,6 +21,7 @@ interface LocationAnalyticsPanelProps {
 
 export function LocationAnalyticsPanel({ lat, lon, onClose }: LocationAnalyticsPanelProps) {
   const { data, isLoading, error } = useLocationAnalytics(lat, lon, true);
+  const { locationName, isLoading: isGeocodingLoading } = useReverseGeocode(lat, lon);
 
   const { alerts, dismissAlert } = useEarlyWarningAlerts({
     lat,
@@ -93,8 +95,19 @@ export function LocationAnalyticsPanel({ lat, lon, onClose }: LocationAnalyticsP
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <div className="text-xs text-muted-foreground font-mono">
-            {lat.toFixed(5)}°, {lon.toFixed(5)}°
+          <div className="space-y-0.5">
+            {(locationName || isGeocodingLoading) && (
+              <div className="text-sm font-medium text-foreground flex items-center gap-1">
+                {isGeocodingLoading ? (
+                  <span className="text-muted-foreground italic">Resolving location...</span>
+                ) : (
+                  <span>{locationName}</span>
+                )}
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground font-mono">
+              {lat.toFixed(5)}°, {lon.toFixed(5)}°
+            </div>
           </div>
         </CardHeader>
 
