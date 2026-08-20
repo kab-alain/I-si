@@ -49,13 +49,16 @@ export class FloodRiskAPI {
       lat = validLat;
       lon = validLon;
 
-      // Default to last 30 days if not specified
+      // Default to last 30 days if not specified.
+      // NASA POWER has ~2-5 day data lag — cap end date to avoid empty responses.
       if (!endDate) {
-        endDate = new Date().toISOString().split('T')[0].replace(/-/g, '');
+        const capDate = new Date();
+        capDate.setDate(capDate.getDate() - 5);
+        endDate = capDate.toISOString().split('T')[0].replace(/-/g, '');
       }
       if (!startDate) {
         const date = new Date();
-        date.setDate(date.getDate() - 30);
+        date.setDate(date.getDate() - 35); // 30 days before the capped end date
         startDate = date.toISOString().split('T')[0].replace(/-/g, '');
       }
 

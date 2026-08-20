@@ -66,7 +66,8 @@ export function useLocationAnalytics(
       if (!lat || !lon) return null;
 
       try {
-        const endDate = new Date();
+        // NASA POWER has ~2-5 day data lag — cap end date to avoid empty responses
+        const endDate = subDays(new Date(), 5);
         const startDate7 = subDays(endDate, 7);
         const startDate30 = subDays(endDate, 30);
 

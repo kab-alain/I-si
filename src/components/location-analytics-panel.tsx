@@ -31,10 +31,12 @@ export function LocationAnalyticsPanel({ lat, lon, onClose }: LocationAnalyticsP
     enabled: !!data?.isComplete,
   });
 
+  // Merge and deduplicate warnings from both flood and drought hooks
+  // (both hooks validate independently so identical messages can appear twice)
   const validationWarnings: ValidationWarning[] = [
     ...(data?.floodRisk.details?.validationWarnings ?? []),
     ...(data?.droughtRisk.details?.validationWarnings ?? []),
-  ];
+  ].filter((w, idx, arr) => arr.findIndex(x => x.message === w.message) === idx);
 
   const getRiskColor = (level: string) => {
     switch (level.toLowerCase()) {

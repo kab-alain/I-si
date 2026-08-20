@@ -45,7 +45,8 @@ export function useDroughtRisk(
       lon = validated.coordinates.lon;
 
       try {
-        const endDate = new Date();
+        // NASA POWER has ~2-5 day data lag — cap end date to avoid empty responses
+        const endDate = subDays(new Date(), 5);
         const startDate30 = subDays(endDate, 30);
         const startDate90 = subDays(endDate, 90);
 
