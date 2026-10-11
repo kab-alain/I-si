@@ -6,7 +6,7 @@ import type { AuditAction } from '@/lib/types/audit-log';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = parseInt(searchParams.get('limit') || '100', 10);
+    const limit = parseInt(searchParams.get('limit') || '200', 10);
     const logs = await getAuditLogs(limit);
     return NextResponse.json({ logs });
   } catch (error: unknown) {
