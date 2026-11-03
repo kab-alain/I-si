@@ -66,9 +66,9 @@ export function LayerLegend({ selectedLayers }: LayerLegendProps) {
                       {metadata?.layerName.replace(/_/g, ' ')}
                     </p>
                     <p className="text-xs text-muted-foreground">{metadata?.description}</p>
-                    {metadata?.unit && (
+                    {(metadata as any)?.unit && (
                       <Badge variant="outline" className="mt-1 text-xs">
-                        {metadata.unit}
+                        {(metadata as any).unit}
                       </Badge>
                     )}
                   </div>

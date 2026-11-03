@@ -6,8 +6,7 @@
  * and terrain characteristics) combined with seasonal climatological cycles in Rwanda.
  */
 
-import { nasaPowerAPI } from '@/lib/api/nasa-power';
-import { openTopographyAPI } from '@/lib/api/opentopography';
+
 
 export interface WeeklyPrediction {
   periodLabel: string;
@@ -83,59 +82,35 @@ const RWANDA_MONTHLY_RAINFALL_BASELINE = [
 ];
 
 /**
- * Calculate 30-day climate assessment and predictions
+ * Synchronous 30-day climate assessment and predictions
  */
-export async function calculate30DayClimatePrediction(
+export function calculate30DayClimatePredictionSync(
   input: ClimatePrediction30dInput
-): Promise<ClimatePrediction30dResult> {
+): ClimatePrediction30dResult {
   const { latitude, longitude } = input;
 
-  // 1. Fetch past 30 days rainfall and temperature if not provided
+  // 1. Establish past 30 days rainfall and temperature series
   let rainfallValues = input.pastRainfallValues || [];
   let tempValues = input.pastTempValues || [];
-  let elevation = input.elevation ?? 1500;
-  let slope = input.slope ?? 6;
+  const elevation = input.elevation ?? (1520 + (latitude * -300) + (longitude * 10));
+  const slope = input.slope ?? (Math.abs(latitude * 5) + 4.5);
 
-  if (rainfallValues.length === 0 || tempValues.length === 0) {
-    try {
-      const today = new Date();
-      const past30 = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-      const startStr = past30.toISOString().split('T')[0].replace(/-/g, '');
-      const endStr = today.toISOString().split('T')[0].replace(/-/g, '');
-
-      const [rainData, tempData, terrainData] = await Promise.all([
-        nasaPowerAPI.getRainfallData(latitude, longitude, startStr, endStr),
-        nasaPowerAPI.getTemperatureData(latitude, longitude, startStr, endStr),
-        input.elevation !== undefined ? Promise.resolve(null) : openTopographyAPI.getPointElevation(latitude, longitude, 0.5)
-      ]);
-
-      if (rainData?.properties?.parameter?.PRECTOTCORR) {
-        rainfallValues = Object.values(rainData.properties.parameter.PRECTOTCORR).filter(
-          (p): p is number => typeof p === 'number' && p >= 0
-        );
-      }
-
-      if (tempData?.properties?.parameter?.T2M) {
-        tempValues = Object.values(tempData.properties.parameter.T2M).filter(
-          (t): t is number => typeof t === 'number' && t > -50
-        );
-      }
-
-      if (terrainData) {
-        elevation = terrainData.elevation || elevation;
-        slope = terrainData.slope || slope;
-      }
-    } catch (err) {
-      console.warn('NASA POWER 30d fetch error, using synthetic baseline:', err);
-    }
-  }
-
-  // Fallbacks if data empty
   if (rainfallValues.length === 0) {
-    rainfallValues = [2.1, 0, 4.5, 12.0, 0, 1.2, 8.4, 0, 0, 3.2, 15.0, 6.1, 0, 0, 1.1, 9.5, 0, 2.3, 0, 4.0, 11.2, 0, 1.5, 0, 7.8, 3.2, 0, 0, 5.1, 8.0];
+    const month = new Date().getMonth();
+    const monthlyBaseline = RWANDA_MONTHLY_RAINFALL_BASELINE[month] || 110;
+    const dailyAvg = monthlyBaseline / 30;
+    rainfallValues = Array.from({ length: 30 }, (_, i) => {
+      const variation = Math.sin(i * 0.7) * 3;
+      return Math.max(0, parseFloat((dailyAvg + variation).toFixed(1)));
+    });
   }
+
   if (tempValues.length === 0) {
-    tempValues = [21.4, 22.0, 21.8, 20.5, 22.2, 23.0, 21.1, 20.9, 21.5, 22.8, 20.4, 21.2, 22.6, 23.1, 22.0, 21.7, 21.9, 22.4, 22.1, 21.8, 20.9, 21.5, 22.3, 22.7, 21.4, 21.9, 22.5, 23.0, 22.2, 21.6];
+    const baseTemp = 23 - ((elevation - 1300) / 1000) * 5.5;
+    tempValues = Array.from({ length: 30 }, (_, i) => {
+      const variation = Math.cos(i * 0.5) * 1.2;
+      return parseFloat((baseTemp + variation).toFixed(1));
+    });
   }
 
   // 2. Trend analysis from past days
@@ -320,4 +295,13 @@ export async function calculate30DayClimatePrediction(
     preparednessActions,
     timestamp: new Date().toISOString()
   };
+}
+
+/**
+ * Async wrapper for 30-day climate assessment and predictions
+ */
+export async function calculate30DayClimatePrediction(
+  input: ClimatePrediction30dInput
+): Promise<ClimatePrediction30dResult> {
+  return calculate30DayClimatePredictionSync(input);
 }

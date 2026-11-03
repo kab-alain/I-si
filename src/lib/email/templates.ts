@@ -56,7 +56,7 @@ export function generateWeatherAlertEmail(
   unsubscribeUrl: string
 ): { subject: string; html: string; text: string } {
   const highestSeverity = alerts.reduce((max, alert) => {
-    const severityLevel = { low: 1, moderate: 2, high: 3, extreme: 4 };
+    const severityLevel: Record<string, number> = { low: 1, moderate: 2, high: 3, extreme: 4 };
     const currentLevel = severityLevel[alert.severity] || 0;
     const maxLevel = severityLevel[max] || 0;
     return currentLevel > maxLevel ? alert.severity : max;

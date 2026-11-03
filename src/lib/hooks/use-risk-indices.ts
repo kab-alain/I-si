@@ -170,7 +170,8 @@ export function useCombinedRisk(input: {
     input
       ? {
           latitude: input.latitude,
-          longitude: input.longitude
+          longitude: input.longitude,
+          predictionDays: 7
         }
       : null,
     enabled
@@ -346,9 +347,10 @@ export function useGridRisk(input: {
             } else {
               const result = await calculateFloodPrediction({
                 latitude: point.lat,
-                longitude: point.lon
+                longitude: point.lon,
+                predictionDays: 7
               });
-              risk = result.overallScore;
+              risk = result.predictionScore;
             }
 
             return {
