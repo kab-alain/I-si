@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Map, BarChart3, Info, Home, Bot, Bell, Users, Shield, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
+import { Map, BarChart3, Info, Home, Bot, Bell, Users, Shield, LogIn, UserPlus, LogOut, User as UserIcon, Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -25,6 +25,7 @@ export function Navigation() {
   const pathname = usePathname();
   const { user, isAuthenticated, setAuthModalOpen, setAuthModalTab, logout } = useAuthStore();
   const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -105,10 +106,10 @@ export function Navigation() {
             </Link>
             <ThemeToggle />
 
-            {/* AUTHENTICATION SESSION TRIGGER CONTROLS */}
+            {/* AUTHENTICATION SESSION TRIGGER CONTROLS - DESKTOP */}
             {mounted && isAuthenticated && user ? (
-              <div className="flex items-center gap-2 border-l pl-3 ml-1">
-                <div className="hidden sm:flex flex-col items-end mr-1">
+              <div className="hidden sm:flex items-center gap-2 border-l pl-3 ml-1">
+                <div className="flex flex-col items-end mr-1">
                   <span className="text-xs font-semibold max-w-[120px] truncate">{user.name}</span>
                   {getRoleBadge(user.role)}
                 </div>
@@ -124,7 +125,7 @@ export function Navigation() {
               </div>
             ) : (
               mounted && (
-                <div className="flex items-center gap-1.5 border-l pl-3 ml-1">
+                <div className="hidden sm:flex items-center gap-1.5 border-l pl-3 ml-1">
                   <Button
                     onClick={() => {
                       setAuthModalTab('login');
@@ -135,7 +136,7 @@ export function Navigation() {
                     className="text-xs gap-1.5 px-2"
                   >
                     <LogIn className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Log In</span>
+                    <span>Log In</span>
                   </Button>
                   <Button
                     onClick={() => {
@@ -146,14 +147,111 @@ export function Navigation() {
                     className="text-xs gap-1.5 px-3"
                   >
                     <UserPlus className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Sign Up</span>
+                    <span>Sign Up</span>
                   </Button>
                 </div>
               )
             )}
+
+            {/* Mobile Hamburger Menu Toggle Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden text-foreground ml-1"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Drawer Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t bg-background/95 backdrop-blur px-4 pt-3 pb-6 space-y-3">
+          <div className="flex flex-col space-y-1">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    'flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground font-semibold'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Mobile Live Location widget */}
+          <div className="pt-2 border-t">
+            <LiveLocation />
+          </div>
+
+          {/* Mobile Authentication status and actions */}
+          {mounted && isAuthenticated && user ? (
+            <div className="pt-2 border-t flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <UserIcon className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium truncate max-w-[140px]">{user.name}</span>
+                {getRoleBadge(user.role)}
+              </div>
+              <Button
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }}
+                variant="outline"
+                size="sm"
+                className="text-xs text-destructive hover:bg-destructive/10"
+              >
+                <LogOut className="h-3.5 w-3.5 mr-1" />
+                Log Out
+              </Button>
+            </div>
+          ) : (
+            mounted && (
+              <div className="pt-2 border-t flex items-center gap-2">
+                <Button
+                  onClick={() => {
+                    setAuthModalTab('login');
+                    setAuthModalOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs"
+                >
+                  <LogIn className="h-3.5 w-3.5 mr-1" />
+                  Log In
+                </Button>
+                <Button
+                  onClick={() => {
+                    setAuthModalTab('signup');
+                    setAuthModalOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  size="sm"
+                  className="flex-1 text-xs"
+                >
+                  <UserPlus className="h-3.5 w-3.5 mr-1" />
+                  Sign Up
+                </Button>
+              </div>
+            )
+          )}
+        </div>
+      )}
       
       {/* Global Auth Modal portal */}
       <AuthModal />

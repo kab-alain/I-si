@@ -14,6 +14,7 @@ import { sentinelHubAPI } from '@/lib/api/sentinel-hub';
 import { gibsClient, GibsLayerKey, GIBS_DATASETS } from '@/lib/api/nasa-gibs';
 import { useGeolocation } from '@/hooks/use-geolocation';
 import { LocationAnalyticsPanel } from '@/components/location-analytics-panel';
+import { ClimateRiskPopup } from '@/components/ClimateRiskPopup';
 import { LayerLegend } from './layer-legend';
 
 interface MapContainerProps {
@@ -27,6 +28,7 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
   
   // State
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showPopup, setShowPopup] = useState(true);
   const [analyticsCoordinates, setAnalyticsCoordinates] = useState<Coordinates | null>(null);
   const [mapboxToken] = useState(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
   
@@ -61,7 +63,7 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
     });
 
     setAnalyticsCoordinates(coordinates);
-    setShowAnalytics(true);
+    setShowPopup(true);
     
     mapRef.current?.flyTo({
       center: [lngLat.lng, lngLat.lat],
@@ -89,6 +91,7 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
   const handleClearSelection = useCallback(() => {
     setSelectedLocation(null);
     setShowAnalytics(false);
+    setShowPopup(false);
     setAnalyticsCoordinates(null);
     clearMarkers();
   }, [setSelectedLocation, clearMarkers]);
@@ -105,7 +108,7 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
         duration: 2000,
       });
       setAnalyticsCoordinates(geoCoordinates);
-      setShowAnalytics(true);
+      setShowPopup(true);
       setSelectedLocation({
         coordinates: geoCoordinates,
       });
@@ -195,9 +198,14 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
             <Locate className={`h-4 w-4 mr-2 ${isGeoLoading ? 'animate-spin' : ''}`} />
             {isGeoLoading ? 'Locating...' : 'Pin Me'}
           </Button>
-          {(selectedLocation || showAnalytics) && (
+          {(selectedLocation || analyticsCoordinates || showAnalytics || showPopup) && (
             <Button variant="secondary" size="sm" onClick={handleClearSelection} className="shadow-lg">
               <X className="h-4 w-4 mr-2" /> Clear
+            </Button>
+          )}
+          {analyticsCoordinates && !showPopup && (
+            <Button variant="default" size="sm" onClick={() => setShowPopup(true)} className="shadow-lg">
+              Show Prediction Popup
             </Button>
           )}
         </div>
@@ -231,6 +239,15 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
           attributionControl={false}
           reuseMaps={true}
         >
+            {/* Interactive Climate Risk, 30-Day Prediction & Agriculture Popup */}
+            {showPopup && analyticsCoordinates && (
+              <ClimateRiskPopup
+                coordinates={analyticsCoordinates}
+                onClose={() => setShowPopup(false)}
+                timeRange={timeRange}
+              />
+            )}
+
             {/* --- NASA GIBS LAYERS --- */}
             {/* Visuals */}
             {renderGibsLayer('nasa-viirs-flood')}
