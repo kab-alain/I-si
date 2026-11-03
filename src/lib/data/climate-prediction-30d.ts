@@ -298,7 +298,7 @@ export async function calculate30DayClimatePrediction(
       predictedRainfall30dMm: parseFloat(predictedRainfall30d.toFixed(1)),
       historicalBaseline30dMm: seasonalBaselineRain,
       rainfallAnomalyPct,
-      averageProjectedTemp,
+      averageProjectedTemp: projectedAvgTemp,
       tempAnomaly,
       overallRiskScore: parseFloat(overallRiskScore.toFixed(2)),
       overallRiskLevel,
