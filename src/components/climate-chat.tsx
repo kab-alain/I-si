@@ -122,7 +122,7 @@ export function ClimateChat({ agent = 'climateAnalyst', initialMessage }: Climat
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
-        } catch (e) {
+        } catch {
           // Ignore errors if recognition wasn't started
         }
         recognitionRef.current = null;

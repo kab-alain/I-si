@@ -2,7 +2,7 @@
  * React hooks for satellite data integration
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchSatelliteData, SatelliteDataResponse, NDVIData, LandSurfaceTemperature, SoilMoisture, LandUseData } from '@/lib/api/satellite-data';
 
 export interface UseSatelliteDataOptions {
@@ -33,25 +33,28 @@ export function useSatelliteData({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchData = async () => {
+  const dataTypesKey = dataTypes.join(',');
+
+  const fetchData = useCallback(async () => {
     if (!enabled) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const result = await fetchSatelliteData(lat, lon, startDate, endDate, dataTypes);
+      const types = dataTypesKey.split(',') as ('ndvi' | 'lst' | 'soil' | 'et' | 'landuse')[];
+      const result = await fetchSatelliteData(lat, lon, startDate, endDate, types);
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch satellite data'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enabled, lat, lon, startDate, endDate, dataTypesKey]);
 
   useEffect(() => {
     fetchData();
-  }, [lat, lon, startDate, endDate, dataTypes.join(','), enabled]);
+  }, [fetchData]);
 
   return {
     data,
@@ -92,7 +95,7 @@ export function useNDVIData({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!enabled) return;
 
     setIsLoading(true);
@@ -106,11 +109,11 @@ export function useNDVIData({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enabled, lat, lon, startDate, endDate]);
 
   useEffect(() => {
     fetchData();
-  }, [lat, lon, startDate, endDate, enabled]);
+  }, [fetchData]);
 
   // Calculate vegetation health metrics
   const vegetationHealth = (() => {
@@ -190,7 +193,7 @@ export function useLandSurfaceTemperature({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!enabled) return;
 
     setIsLoading(true);
@@ -204,11 +207,11 @@ export function useLandSurfaceTemperature({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enabled, lat, lon, startDate, endDate]);
 
   useEffect(() => {
     fetchData();
-  }, [lat, lon, startDate, endDate, enabled]);
+  }, [fetchData]);
 
   // Calculate temperature analysis
   const temperatureAnalysis = (() => {
@@ -296,7 +299,7 @@ export function useSoilMoisture({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!enabled) return;
 
     setIsLoading(true);
@@ -310,11 +313,11 @@ export function useSoilMoisture({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enabled, lat, lon, startDate, endDate]);
 
   useEffect(() => {
     fetchData();
-  }, [lat, lon, startDate, endDate, enabled]);
+  }, [fetchData]);
 
   // Calculate moisture analysis
   const moistureAnalysis = (() => {
@@ -399,7 +402,7 @@ export function useLandUse({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!enabled) return;
 
     setIsLoading(true);
@@ -413,11 +416,11 @@ export function useLandUse({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enabled, lat, lon]);
 
   useEffect(() => {
     fetchData();
-  }, [lat, lon, enabled]);
+  }, [fetchData]);
 
   // Calculate land use analysis
   const landUseAnalysis = (() => {

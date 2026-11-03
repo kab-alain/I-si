@@ -2,7 +2,7 @@
  * React hooks for climate indices data
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   fetchClimateIndices, 
   ClimateIndicesResponse, 
@@ -40,7 +40,9 @@ export function useClimateIndices({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchData = async () => {
+  const indicesKey = indices.join(',');
+
+  const fetchData = useCallback(async () => {
     if (!enabled) return;
 
     setIsLoading(true);
@@ -54,11 +56,11 @@ export function useClimateIndices({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enabled, lat, lon, startDate, endDate]);
 
   useEffect(() => {
     fetchData();
-  }, [lat, lon, startDate, endDate, indices.join(','), enabled]);
+  }, [fetchData, indicesKey]);
 
   return {
     data,
@@ -102,7 +104,7 @@ export function useSPIData({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!enabled) return;
 
     setIsLoading(true);
@@ -116,11 +118,11 @@ export function useSPIData({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enabled, lat, lon, startDate, endDate]);
 
   useEffect(() => {
     fetchData();
-  }, [lat, lon, startDate, endDate, timescale, enabled]);
+  }, [fetchData, timescale]);
 
   // Calculate drought analysis
   const droughtAnalysis = (() => {
@@ -218,7 +220,7 @@ export function useSPEIData({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!enabled) return;
 
     setIsLoading(true);
@@ -232,11 +234,11 @@ export function useSPEIData({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enabled, lat, lon, startDate, endDate]);
 
   useEffect(() => {
     fetchData();
-  }, [lat, lon, startDate, endDate, timescale, enabled]);
+  }, [fetchData, timescale]);
 
   // Calculate drought analysis
   const droughtAnalysis = (() => {
@@ -326,7 +328,7 @@ export function useHeatIndex({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!enabled) return;
 
     setIsLoading(true);
@@ -340,11 +342,11 @@ export function useHeatIndex({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enabled, lat, lon, startDate, endDate]);
 
   useEffect(() => {
     fetchData();
-  }, [lat, lon, startDate, endDate, enabled]);
+  }, [fetchData]);
 
   // Calculate heat analysis
   const heatAnalysis = (() => {
@@ -451,7 +453,7 @@ export function useWindChill({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!enabled) return;
 
     setIsLoading(true);
@@ -465,11 +467,11 @@ export function useWindChill({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [enabled, lat, lon, startDate, endDate]);
 
   useEffect(() => {
     fetchData();
-  }, [lat, lon, startDate, endDate, enabled]);
+  }, [fetchData]);
 
   // Calculate cold analysis
   const coldAnalysis = (() => {

@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, TrendingUp, TrendingDown, Sparkles, RefreshCw } from 'lucide-react';
+import { AlertTriangle, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
 import { nasaPowerAPI } from '@/lib/api/nasa-power';
 import { srtmAPI } from '@/lib/api/srtm';
 
@@ -17,13 +16,13 @@ interface RiskPrediction {
   trend: 'increasing' | 'stable' | 'decreasing';
 }
 
+const KIGALI_COORDS = { lat: -1.9403, lon: 29.8739 };
+
 export function AIRiskPredictor() {
   const [prediction, setPrediction] = useState<RiskPrediction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const kigaliCoords = { lat: -1.9403, lon: 29.8739 };
-
-  const analyzeTrends = async () => {
+  const analyzeTrends = useCallback(async () => {
     setIsLoading(true);
     try {
       // Get recent temperature data
@@ -36,12 +35,12 @@ export function AIRiskPredictor() {
 
       const [tempData, elevData] = await Promise.all([
         nasaPowerAPI.getTemperatureData(
-          kigaliCoords.lat,
-          kigaliCoords.lon,
+          KIGALI_COORDS.lat,
+          KIGALI_COORDS.lon,
           startDate,
           endDate
         ),
-        srtmAPI.getElevationData(kigaliCoords),
+        srtmAPI.getElevationData(KIGALI_COORDS),
       ]);
 
       // Analyze temperature trends
@@ -108,11 +107,11 @@ export function AIRiskPredictor() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     analyzeTrends();
-  }, []);
+  }, [analyzeTrends]);
 
   if (!prediction) {
     return (
@@ -147,7 +146,9 @@ export function AIRiskPredictor() {
           </div>
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Risk Level</p>
-            <p className="font-bold text-lg uppercase">{prediction.riskLevel}</p>
+            <span className={`inline-block px-2.5 py-0.5 rounded text-xs font-bold text-white uppercase ${riskColors[prediction.riskLevel]}`}>
+              {prediction.riskLevel}
+            </span>
           </div>
         </div>
 

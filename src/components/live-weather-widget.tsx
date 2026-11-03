@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Cloud, Sun, Thermometer } from 'lucide-react';
 import { nasaPowerAPI } from '@/lib/api/nasa-power';
@@ -9,14 +9,7 @@ export function LiveWeatherWidget() {
   const [weather, setWeather] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchWeather();
-    // Update every 15 minutes
-    const interval = setInterval(fetchWeather, 15 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchWeather = async () => {
+  const fetchWeather = useCallback(async () => {
     try {
       const date = new Date();
       date.setDate(date.getDate() - 2);
@@ -47,7 +40,14 @@ export function LiveWeatherWidget() {
       console.error('Weather fetch error:', error);
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchWeather();
+    // Update every 15 minutes
+    const interval = setInterval(fetchWeather, 15 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchWeather]);
 
   const getCondition = (temp: number) => {
     if (temp > 28) return { text: 'Hot', icon: Sun, color: 'text-orange-500' };
