@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import Map, { MapRef, Source, Layer } from 'react-map-gl/mapbox';
+import Map, { MapRef, Source, Layer, Marker } from 'react-map-gl/mapbox';
 import type { MapMouseEvent } from 'react-map-gl/mapbox';
 import { RWANDA_CENTER, RWANDA_BOUNDS, getRwandaZoomLevel } from '@/lib/utils/geo-utils';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { useMapStore } from '@/lib/store/map-store';
 import type { Coordinates } from '@/types';
-import { X, Locate } from 'lucide-react';
+import { X, Locate, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import { sentinelHubAPI } from '@/lib/api/sentinel-hub';
@@ -206,7 +206,7 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
           )}
           {analyticsCoordinates && !showPopup && (
             <Button variant="default" size="sm" onClick={() => setShowPopup(true)} className="shadow-lg">
-              Show Prediction Popup
+              Show Climate Panel
             </Button>
           )}
         </div>
@@ -240,13 +240,24 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
           attributionControl={false}
           reuseMaps={true}
         >
-            {/* Interactive Climate Risk, 30-Day Prediction & Agriculture Popup */}
-            {showPopup && analyticsCoordinates && (
-              <ClimateRiskPopup
-                coordinates={analyticsCoordinates}
-                onClose={() => setShowPopup(false)}
-                timeRange={timeRange}
-              />
+            {/* Map Marker for Selected Location */}
+            {analyticsCoordinates && (
+              <Marker
+                longitude={analyticsCoordinates.lon}
+                latitude={analyticsCoordinates.lat}
+                anchor="bottom"
+              >
+                <div className="flex flex-col items-center pointer-events-none group -translate-y-1">
+                  <div className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg whitespace-nowrap mb-1 flex items-center gap-1 border border-primary-foreground/20">
+                    <MapPin className="h-3 w-3" />
+                    <span>Selected</span>
+                  </div>
+                  <div className="relative flex items-center justify-center">
+                    <span className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-primary opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-primary border-2 border-white shadow-md" />
+                  </div>
+                </div>
+              </Marker>
             )}
 
             {/* --- NASA GIBS LAYERS --- */}
@@ -288,6 +299,15 @@ export function MapContainer({ selectedLayers, timeRange, mapStyle }: MapContain
             />
             </Source>
         </Map>
+
+        {/* Climate Risk, 30-Day Outlook & Agriculture Panel (Pinned to Right, starting from Top) */}
+        {showPopup && analyticsCoordinates && (
+          <ClimateRiskPopup
+            coordinates={analyticsCoordinates}
+            onClose={() => setShowPopup(false)}
+            timeRange={timeRange}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );

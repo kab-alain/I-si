@@ -10,7 +10,6 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Popup } from 'react-map-gl/mapbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -485,21 +484,16 @@ export function ClimateRiskPopup({ coordinates, onClose, timeRange = '30d' }: Cl
   };
 
   return (
-    <Popup
-      longitude={coordinates.lon}
-      latitude={coordinates.lat}
-      onClose={onClose}
-      closeButton={false}
-      closeOnClick={false}
-      maxWidth="500px"
-      className="z-50"
+    <aside
+      aria-label="Climate Risk, 30-Day Outlook & Agriculture Panel"
+      className="absolute top-0 sm:top-2 right-0 sm:right-2 bottom-0 sm:bottom-2 z-30 w-full sm:w-[480px] md:w-[500px] max-w-full bg-background/95 backdrop-blur-md text-foreground rounded-none sm:rounded-2xl shadow-2xl border-l sm:border border-border flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-6 duration-200"
     >
-      <div className="w-[90vw] sm:w-[480px] max-h-[82vh] overflow-y-auto bg-background/95 backdrop-blur-md text-foreground rounded-2xl p-4 shadow-2xl border border-border space-y-4">
-        {/* Header Bar */}
-        <div className="flex items-start justify-between border-b pb-3">
-          <div className="space-y-1">
+      {/* Header Bar - Fixed at top of panel */}
+      <div className="p-4 border-b flex-shrink-0 bg-background/80 backdrop-blur-sm space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-base tracking-tight text-foreground">
+              <span className="font-bold text-base tracking-tight text-foreground truncate">
                 {locationName || (isGeocodingLoading ? 'Resolving location...' : 'Climate Intelligence Assessment')}
               </span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 flex items-center gap-1">
@@ -513,17 +507,26 @@ export function ClimateRiskPopup({ coordinates, onClose, timeRange = '30d' }: Cl
                 <span className="truncate">{locationName}</span>
               </div>
             )}
-            <div className="text-xs text-muted-foreground flex items-center gap-2 font-mono">
+            <div className="text-xs text-muted-foreground flex items-center gap-2 font-mono flex-wrap">
               <span>{coordinates.lat.toFixed(4)}°N, {coordinates.lon.toFixed(4)}°E</span>
               <span>•</span>
               <span>Elev: {climateData.elevation.value.toFixed(0)}m</span>
             </div>
           </div>
-          <Button onClick={onClose} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground">
+          <Button
+            onClick={onClose}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted flex-shrink-0"
+            aria-label="Close panel"
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
+      </div>
 
+      {/* Scrollable Body - Scrollable content across full height */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Tab Navigation Controls */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
           <TabsList className="grid grid-cols-3 w-full h-9 bg-muted/80 p-0.5 rounded-lg text-xs">
@@ -991,15 +994,15 @@ export function ClimateRiskPopup({ coordinates, onClose, timeRange = '30d' }: Cl
         </Tabs>
 
         {/* Footer info & timestamp */}
-        <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-2 border-t">
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-3 border-t">
           <div className="flex items-center gap-1">
             <Info className="h-3 w-3" />
-            <span>Open-Meteo & NASA POWER</span>
+            <span>Open-Meteo, NASA POWER & MINAGRI</span>
           </div>
           <span>Updated: {new Date(climateData.lastUpdated).toLocaleTimeString()}</span>
         </div>
       </div>
-    </Popup>
+    </aside>
   );
 }
 
