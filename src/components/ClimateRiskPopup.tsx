@@ -258,9 +258,6 @@ export function ClimateRiskPopup({ coordinates, onClose, timeRange = '30d' }: Cl
           lastUpdated: new Date().toISOString()
         };
 
-        if (isCancelled) return;
-        setClimateData(combinedData);
-
         // 5. Compute 30-Day Climate Prediction based on past detected trends
         const pred30d = await calculate30DayClimatePrediction({
           latitude: coordinates.lat,
@@ -271,9 +268,6 @@ export function ClimateRiskPopup({ coordinates, onClose, timeRange = '30d' }: Cl
           slope,
           ndvi: combinedData.ndvi.value
         });
-
-        if (isCancelled) return;
-        setPrediction30d(pred30d);
 
         // 6. Fetch Agricultural Recommendations from Public Agro-Meteorology API
         const agRecs = await getAgricultureRecommendations({
@@ -286,6 +280,8 @@ export function ClimateRiskPopup({ coordinates, onClose, timeRange = '30d' }: Cl
         });
 
         if (isCancelled) return;
+        setClimateData(combinedData);
+        setPrediction30d(pred30d);
         setAgriRecs(agRecs);
 
       } catch (err) {
@@ -502,12 +498,14 @@ export function ClimateRiskPopup({ coordinates, onClose, timeRange = '30d' }: Cl
                 <CardContent className="p-0 text-center space-y-1">
                   <span className="text-[10px] text-muted-foreground uppercase font-medium">30d Projection</span>
                   <div>
-                    <Badge className={`text-[10px] uppercase font-bold px-2 py-0.5 ${getRiskBadgeColor(prediction30d?.overallAssessment.overallRiskLevel || 'low')}`}>
-                      {prediction30d?.overallAssessment.overallRiskLevel || 'Normal'}
+                    <Badge className={`text-[10px] uppercase font-bold px-2 py-0.5 ${getRiskBadgeColor(prediction30d?.overallAssessment?.overallRiskLevel || 'low')}`}>
+                      {prediction30d?.overallAssessment?.overallRiskLevel || 'Normal'}
                     </Badge>
                   </div>
                   <div className="text-sm font-black font-mono text-primary">
-                    {prediction30d?.overallAssessment.predictedRainfall30dMm.toFixed(0) || '0'} mm
+                    {prediction30d?.overallAssessment?.predictedRainfall30dMm !== undefined
+                      ? `${prediction30d.overallAssessment.predictedRainfall30dMm.toFixed(0)} mm`
+                      : '0 mm'}
                   </div>
                 </CardContent>
               </Card>

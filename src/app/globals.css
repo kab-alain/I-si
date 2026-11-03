@@ -138,3 +138,17 @@
     animation: aurora 60s ease infinite;
   }
 }
+
+/* Mapbox GL Popup clean overrides */
+.mapboxgl-popup {
+  z-index: 50 !important;
+}
+.mapboxgl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 1rem !important;
+}
+.mapboxgl-popup-tip {
+  display: none !important;
+}

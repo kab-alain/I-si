@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import Map, { MapRef, Source, Layer } from 'react-map-gl/mapbox';
 import type { MapMouseEvent } from 'react-map-gl/mapbox';
 import { RWANDA_CENTER, RWANDA_BOUNDS, getRwandaZoomLevel } from '@/lib/utils/geo-utils';
