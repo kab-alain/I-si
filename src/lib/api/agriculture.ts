@@ -216,6 +216,20 @@ function buildCropRecommendations(
   const isDry = metrics.shortTermRainSum16d < 25 || metrics.soilMoistureCategory === 'dry' || metrics.soilMoistureCategory === 'critically_dry';
   const isHighland = elevation >= 1900;
   const isLowland = elevation < 1450;
+  const isCoverSparse = ndvi < 0.35;
+
+  // Add cover crop if vegetation is sparse/degraded
+  if (isCoverSparse) {
+    recommendations.push({
+      name: 'Mucuna / Lablab (Soil Restoration Cover Crop)',
+      category: 'agroforestry',
+      suitability: 'highly_recommended',
+      waterRequirement: 'low',
+      maturityPeriod: '60 - 90 days',
+      seasonality: 'Immediate vegetative cover planting',
+      notes: 'Satellite NDVI detects low vegetative cover (< 0.35). Fast-growing green manure protects exposed topsoil from erosion.'
+    });
+  }
 
   // 1. STAPLE CROPS
   if (isHighland) {
@@ -391,6 +405,10 @@ function buildFarmerAdvisory(
   } else {
     soilWater.push('Maintain balanced soil moisture through vegetative cover and companion legume intercropping.');
     soilWater.push('Store rooftop and slope rainwater in micro-dams or plastic-lined farm ponds for dry-spell buffering.');
+  }
+
+  if (ndvi < 0.35) {
+    soilWater.push('Satellite NDVI indicates depleted vegetative cover: prioritize rapid-growing ground cover and mulching.');
   }
 
   // Pest & Disease Alerts

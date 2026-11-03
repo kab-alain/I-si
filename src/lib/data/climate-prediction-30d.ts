@@ -189,7 +189,7 @@ export async function calculate30DayClimatePrediction(
 
     // Flood & Drought probabilities for this week
     let floodRiskPct = Math.min(95, Math.round((dailyAvg / 12) * 50 + (slope < 3 || slope > 18 ? 15 : 0)));
-    let droughtRiskPct = Math.min(95, Math.max(5, Math.round((1 - dailyAvg / 5) * 60 + (tempTrend === 'warming' ? 15 : 0))));
+    const droughtRiskPct = Math.min(95, Math.max(5, Math.round((1 - dailyAvg / 5) * 60 + (tempTrend === 'warming' ? 15 : 0))));
 
     let primaryCondition = 'Moderate / Optimal Moisture';
     let severity: WeeklyPrediction['severity'] = 'low';

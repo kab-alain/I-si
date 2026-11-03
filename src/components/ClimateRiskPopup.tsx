@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Popup } from 'react-map-gl/mapbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -104,12 +104,13 @@ export function ClimateRiskPopup({ coordinates, onClose, timeRange = '30d' }: Cl
   const { startDate, endDate } = useMemo(() => {
     const end = new Date();
     const start = new Date();
-    start.setDate(end.getDate() - 30);
+    const days = timeRange === '7d' ? 7 : timeRange === '90d' ? 90 : 30;
+    start.setDate(end.getDate() - days);
     return {
       startDate: start.toISOString().split('T')[0],
       endDate: end.toISOString().split('T')[0]
     };
-  }, []);
+  }, [timeRange]);
 
   // Fetch climate data from APIs
   const { data: rainfallData, isLoading: rainfallLoading } = useRainfallData(
